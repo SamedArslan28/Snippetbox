@@ -5,30 +5,33 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"text/template"
 )
 
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
-
-	log.Println("Starting server on :4000")
-
-	err := http.ListenAndServe(":4000", mux)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-}
-
 func home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path !=
-		"/" {
+	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
-	w.Write([]byte("Hello World"))
+
+	files := []string{
+		"./ui/html/base.gohtml",
+		"./ui/html/pages/home.gohtml",
+		"./ui/html/partials/nav.gohtml",
+	}
+
+	file, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
+	err = file.ExecuteTemplate(w, "base", nil)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
@@ -51,11 +54,9 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
-	w.Write([]byte("Hello from snippetCreate"))
-}
-
-type Person struct {
-	Name     string `json:"name"`
-	LastName string `json:"lastName"`
-	Age      int    `json:"age"`
+	_, err := w.Write([]byte("Hello from snippetCreate"))
+	if err != nil {
+		log.Println(err)
+		return
+	}
 }
