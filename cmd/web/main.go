@@ -1,21 +1,78 @@
 package main
 
 import (
+	"context"
+	"flag"
+	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
+	"os"
+	"snippetbox.samedarslan28.net/internal/models"
 )
 
+// Define an application struct to hold the application-wide dependencies for the
+// web application.
+// For now, we'll only include fields for the two custom loggers, but
+// we'll add more to it as the build progresses.
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	snippets *models.SnippetModel
+}
+
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	addr := flag.String("addr", ":4000", "http service address")
+	dsn := flag.String("dsn", "postgres://postgres:postgres@localhost:5432/snippetbox?sslmode=disable", "database connection string")
 
-	log.Println("Starting server on :4000")
+	flag.Parse()
 
-	err := http.ListenAndServe(":4000", mux)
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime|log.Lshortfile)
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	var conn, err = openDB(*dsn)
+	err = conn.Ping(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		errorLog.Fatal(err)
 		return
 	}
+	defer conn.Close()
+
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+		snippets: &models.SnippetModel{DB: conn},
+	}
+
+	// We are creating new ServeMux because http defaultServeMux is a global variable and accessible from outside
+	// external packages etc...
+
+	infoLog.Printf("Starting server on %s", *addr)
+
+	srv := &http.Server{
+		Addr:     *addr,
+		Handler:  app.routes(),
+		ErrorLog: errorLog,
+	}
+
+	err = srv.ListenAndServe()
+	if err != nil {
+		errorLog.Fatal(err)
+		return
+	}
+}
+
+func openDB(connectionString string) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(context.Background(), connectionString)
+	if err != nil {
+		return nil, err
+	}
+
+	// Test the connection
+	err = pool.Ping(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	return pool, nil
 }
