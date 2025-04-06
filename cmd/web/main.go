@@ -1,10 +1,9 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"flag"
-	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"log"
 	"net/http"
 	"os"
@@ -30,18 +29,16 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime|log.Lshortfile)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	var conn, err = openDB(*dsn)
-	err = conn.Ping(context.Background())
+	db, err := openDB(*dsn)
 	if err != nil {
-		errorLog.Fatal(err)
-		return
+		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer db.Close()
 
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
-		snippets: &models.SnippetModel{DB: conn},
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	// We are creating new ServeMux because http defaultServeMux is a global variable and accessible from outside
@@ -62,17 +59,17 @@ func main() {
 	}
 }
 
-func openDB(connectionString string) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(context.Background(), connectionString)
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
 	}
 
 	// Test the connection
-	err = pool.Ping(context.Background())
+	err = db.Ping()
 	if err != nil {
 		return nil, err
 	}
 
-	return pool, nil
+	return db, nil
 }
