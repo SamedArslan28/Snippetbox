@@ -8,11 +8,14 @@
                 <strong>{{.Title}}</strong>
                 <span>#{{.ID}}</span>
             </div>
+
             <pre><code>{{.Content}}</code></pre>
             <div class='metadata'>
-                <time>Created: {{.Created.Format "2006-01-02 15:04"}}</time>
-                <time>Expires: {{.Expires.Format "2006-01-02 15:04"}}</time>
+                <time>Created: {{humanDate .Created}}</time>
+                <time>Expires: {{humanDate .Expires}}</time>
             </div>
         </div>
+    {{else}}
+        <p>There's nothing to see here... yet!</p>
     {{end}}
 {{end}}
