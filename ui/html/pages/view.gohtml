@@ -1,0 +1,18 @@
+{{define "title"}}Snippet #{{.Snippet.ID}}{{end}}
+
+{{- /*gotype: snippetbox.samedarslan28.net/cmd/web.templateData*/ -}}
+{{define "main"}}
+    {{with .Snippet}}
+        <div class='snippet'>
+            <div class='metadata'>
+                <strong>{{.Title}}</strong>
+                <span>#{{.ID}}</span>
+            </div>
+            <pre><code>{{.Content}}</code></pre>
+            <div class='metadata'>
+                <time>Created: {{.Created.Format "2006-01-02 15:04"}}</time>
+                <time>Expires: {{.Expires.Format "2006-01-02 15:04"}}</time>
+            </div>
+        </div>
+    {{end}}
+{{end}}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -21,23 +22,6 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	for _, snippet := range snippets {
 		fmt.Fprintf(w, "%+v\n", snippet)
 	}
-
-	//files := []string{
-	//	"./ui/html/base.gohtml",
-	//	"./ui/html/pages/home.gohtml",
-	//	"./ui/html/partials/nav.gohtml",
-	//}
-	//
-	//file, err := template.ParseFiles(files...)
-	//if err != nil {
-	//	app.serverError(w, err)
-	//	return
-	//}
-	//err = file.ExecuteTemplate(w, "base", nil)
-	//if err != nil {
-	//	app.serverError(w, err)
-	//	return
-	//}
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
@@ -48,11 +32,25 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	}
 	snippet, err := app.snippets.Get(id)
 	if err != nil {
+		//app.serverError(w, err)
+		return
+	}
+	files := []string{
+		"./ui/html/base.gohtml",
+		"./ui/html/pages/view.gohtml",
+		"./ui/html/partials/nav.gohtml",
+	}
+
+	file, err := template.ParseFiles(files...)
+	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	app.infoLog.Printf("snippet %d", snippet.ID)
-	_, err = w.Write([]byte(snippet.Content))
+
+	data := &templateData{
+		Snippet: snippet,
+	}
+	err = file.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		app.serverError(w, err)
 		return
