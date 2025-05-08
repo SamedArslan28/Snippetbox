@@ -6,6 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"snippetbox.samedarslan28.net/internal/models"
+	"snippetbox.samedarslan28.net/internal/valdiator"
 	"strconv"
 )
 
@@ -48,7 +49,6 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("snippet create view will be implemented."))
 	data := app.newTamplateData(r)
 	data.Form = snippetCreateForm{
 		Expires: 365,
@@ -65,15 +65,34 @@ type snippetCreateForm struct {
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+	var form snippetCreateForm
 
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := 7
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	form.CheckField(valdiator.NotBlank(form.Title), "title", "Title cannot be blank")
+	form.CheckField(valdiator.MaxChars(form.Title, 100), "title", "Title cannot be more than 100 characters")
+	
+	form.CheckField(valdiator.NotBlank(form.Content), "content", "Content cannot be blank")
+	form.CheckField(valdiator.MaxChars(form.Content, 100), "content", "Content cannot be more than 100 characters")
+
+	form.CheckField(valdiator.PermittedInt(form.Expires, 1, 7, 365), "expires", "Expires must be between 1 and 365")
+
+	if !form.Valid() {
+		data := app.newTamplateData(r)
+		data.Form = form
+		app.render(w, http.StatusBadRequest, "create.gohtml", data)
+		return
+	}
+
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
+
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
