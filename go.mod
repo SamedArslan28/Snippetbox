@@ -5,6 +5,7 @@ go 1.22.3
 require github.com/jackc/pgx/v5 v5.7.4
 
 require (
+	github.com/alexedwards/scs/postgresstore v0.0.0-20250417082927-ab20b3feb5e9 // indirect
 	github.com/alexedwards/scs/v2 v2.8.0 // indirect
 	github.com/go-playground/form/v4 v4.2.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
