@@ -53,7 +53,6 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data.Form = snippetCreateForm{
 		Expires: 365,
 	}
-
 	app.render(w, http.StatusOK, "create.gohtml", data)
 }
 
