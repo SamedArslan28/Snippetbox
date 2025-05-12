@@ -112,6 +112,8 @@ func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create a new user
+// email samedarslan3428@gmail.com
+// password samed12345
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	var form userSignupForm
 
@@ -135,6 +137,22 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		app.render(w, http.StatusBadRequest, "signup.gohtml", data)
 		return
 	}
+
+	err = app.users.Insert(form.Name, form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateEmail) {
+			form.AddFieldError("email", "Email address is already in use")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusUnprocessableEntity, "signup.gohtml", data)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please log in.")
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
 // Display a HTML form for logging in a user
