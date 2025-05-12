@@ -1,6 +1,7 @@
 package valdiator
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -37,6 +38,10 @@ func MaxChars(value string, limit int) bool {
 	return utf8.RuneCountInString(value) <= limit
 }
 
+func MinChars(value string, limit int) bool {
+	return utf8.RuneCountInString(value) >= limit
+}
+
 func PermittedInt(value int, permittedValues ...int) bool {
 	for i := range permittedValues {
 		if value == permittedValues[i] {
@@ -44,4 +49,10 @@ func PermittedInt(value int, permittedValues ...int) bool {
 		}
 	}
 	return false
+}
+
+func ValidEmail(value string) bool {
+	emailRegex := `^[a-zA-Z0-9.!#$%&'*+/=?^_` + "`" + `{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`
+	re := regexp.MustCompile(emailRegex)
+	return re.MatchString(value)
 }

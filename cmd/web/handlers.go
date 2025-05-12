@@ -17,7 +17,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := app.newTamplateData(r)
+	data := app.newTemplateData(r)
 	data.Snippets = snippets
 
 	app.render(w, http.StatusOK, "home.gohtml", data)
@@ -42,14 +42,14 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := app.newTamplateData(r)
+	data := app.newTemplateData(r)
 	data.Snippet = snippet
 
 	app.render(w, http.StatusOK, "view.gohtml", data)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	data := app.newTamplateData(r)
+	data := app.newTemplateData(r)
 	data.Form = snippetCreateForm{
 		Expires: 365,
 	}
@@ -81,7 +81,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	form.CheckField(valdiator.PermittedInt(form.Expires, 1, 7, 365), "expires", "Expires must be between 1 and 365")
 
 	if !form.Valid() {
-		data := app.newTamplateData(r)
+		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusBadRequest, "create.gohtml", data)
 		return
@@ -98,13 +98,43 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 
+type userSignupForm struct {
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	valdiator.Validator `form:"-"`
+}
+
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display a HTML form for signing up a new user...")
+	data := app.newTemplateData(r)
+	data.Form = userSignupForm{}
+	app.render(w, http.StatusOK, "signup.gohtml", data)
 }
 
 // Create a new user
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Create a new user...")
+	var form userSignupForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(valdiator.NotBlank(form.Name), "name", "Name cannot be blank")
+
+	form.CheckField(valdiator.NotBlank(form.Email), "email", "Email cannot be blank")
+	form.CheckField(valdiator.ValidEmail(form.Email), "email", "Please enter a valid email address")
+
+	form.CheckField(valdiator.NotBlank(form.Password), "password", "Password cannot be blank")
+	form.CheckField(valdiator.MinChars(form.Password, 8), "password", "Password must be at least 8 characters")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusBadRequest, "signup.gohtml", data)
+		return
+	}
 }
 
 // Display a HTML form for logging in a user
