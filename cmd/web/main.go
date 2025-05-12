@@ -24,6 +24,7 @@ type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	snippets       *models.SnippetModel
+	users          *models.UserModel
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -42,7 +43,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			errorLog.Fatal(err)
+		}
+	}(db)
 
 	templateCache, err := newTemplateCache()
 	if err != nil {
@@ -55,13 +61,14 @@ func main() {
 	sessionManager.Store = postgresstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 	// Setting this means that the cookie will only be sent by a user's web
-	// browser when a HTTPS connection is being used (and won't be sent over an
+	// browser when an HTTPS connection is being used (and won't be sent over an
 	// unsecure HTTP connection).
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
+		users:          &models.UserModel{DB: db},
 		snippets:       &models.SnippetModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
