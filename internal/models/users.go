@@ -47,7 +47,31 @@ VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
 // the provided email address and password. This will return the relevant
 // user ID if they do.
 func (m *UserModel) Authenticate(email, password string) (int, error) {
-	return 0, nil
+	stmt := `SELECT id, hashed_password FROM users WHERE email = $1;`
+	row := m.DB.QueryRow(stmt, email)
+
+	var id int
+	var hashedPassword []byte
+
+	err := row.Scan(&id, &hashedPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+
+	return id, nil
 }
 
 // We'll use the Exists method to check if a user exists with a specific ID.

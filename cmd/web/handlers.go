@@ -155,14 +155,63 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
+type userLoginForm struct {
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	valdiator.Validator `form:"-"`
+}
+
 // Display a HTML form for logging in a user
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display a HTML form for logging in a user...")
+	data := app.newTemplateData(r)
+	data.Form = userLoginForm{}
+	app.render(w, http.StatusOK, "login.gohtml", data)
 }
 
 // Authenticate and login the user
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Authenticate and login the user...")
+	var form userLoginForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(valdiator.NotBlank(form.Email), "email", "Email cannot be blank")
+	form.CheckField(valdiator.ValidEmail(form.Email), "email", "Please enter a valid email address")
+
+	form.CheckField(valdiator.NotBlank(form.Password), "password", "Password cannot be blank")
+	form.CheckField(valdiator.MinChars(form.Password, 8), "password", "Password must be at least 8 characters")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusBadRequest, "login.gohtml", data)
+		return
+	}
+
+	userID, err := app.users.Authenticate(form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddNonFieldError("Email or password is incorrect")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusUnprocessableEntity,
+				"login.gohtml", data)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
+	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
 // Logout the user
