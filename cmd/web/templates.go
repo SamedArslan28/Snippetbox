@@ -2,8 +2,10 @@ package main
 
 import (
 	"html/template"
+	"io/fs"
 	"path/filepath"
 	"snippetbox.samedarslan28.net/internal/models"
+	"snippetbox.samedarslan28.net/ui"
 	"time"
 )
 
@@ -26,41 +28,33 @@ var functions = template.FuncMap{
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
-	cache := make(map[string]*template.Template)
+	cache := map[string]*template.Template{}
 
-	// Get all the pages (templates) from the "pages" directory
-	pages, err := filepath.Glob("./ui/html/pages/*.gohtml")
+	// Use fs.Glob() to get a slice of all filepaths in the ui.Files embedded
+	// filesystem which match the pattern 'html/pages/*.tmpl'.
+	pages, err := fs.Glob(ui.Files, "html/pages/*.gohtml")
 	if err != nil {
 		return nil, err
 	}
 
-	// Iterate over each page and parse the templates
 	for _, page := range pages {
-		// Get the name of the page (file name) to use as the template name in the cache
 		name := filepath.Base(page)
 
-		// Parse the base template
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.gohtml")
+		// Create a slice containing the filepath patterns for the templates to parse.
+		patterns := []string{
+			"html/base.gohtml",
+			"html/partials/*.gohtml",
+			page,
+		}
+
+		// Parse the template files from the embedded filesystem using ParseFS.
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
 		}
 
-		// Parse the partials templates and append them to the base template
-		ts, err = ts.ParseGlob("./ui/html/partials/*.gohtml")
-		if err != nil {
-			return nil, err
-		}
-
-		// Parse the specific page template and append it to the others
-		ts, err = ts.ParseFiles(page)
-		if err != nil {
-			return nil, err
-		}
-
-		// Add the template to the cache
 		cache[name] = ts
 	}
 
-	// Return the cache with all templates
 	return cache, nil
 }
