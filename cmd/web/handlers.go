@@ -6,7 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"snippetbox.samedarslan28.net/internal/models"
-	"snippetbox.samedarslan28.net/internal/valdiator"
+	"snippetbox.samedarslan28.net/internal/validator"
 	"strconv"
 )
 
@@ -37,7 +37,6 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 			app.notFound(w)
 		} else {
 			app.serverError(w, err)
-
 		}
 		return
 	}
@@ -60,7 +59,7 @@ type snippetCreateForm struct {
 	Title               string `form:"title"`
 	Content             string `form:"content"`
 	Expires             int    `form:"expires"`
-	valdiator.Validator `form:"-"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -72,13 +71,13 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	form.CheckField(valdiator.NotBlank(form.Title), "title", "Title cannot be blank")
-	form.CheckField(valdiator.MaxChars(form.Title, 100), "title", "Title cannot be more than 100 characters")
+	form.CheckField(validator.NotBlank(form.Title), "title", "Title cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "Title cannot be more than 100 characters")
 
-	form.CheckField(valdiator.NotBlank(form.Content), "content", "Content cannot be blank")
-	form.CheckField(valdiator.MaxChars(form.Content, 100), "content", "Content cannot be more than 100 characters")
+	form.CheckField(validator.NotBlank(form.Content), "content", "Content cannot be blank")
+	form.CheckField(validator.MaxChars(form.Content, 100), "content", "Content cannot be more than 100 characters")
 
-	form.CheckField(valdiator.PermittedInt(form.Expires, 1, 7, 365), "expires", "Expires must be between 1 and 365")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "Expires must be between 1 and 365")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -102,7 +101,7 @@ type userSignupForm struct {
 	Name                string `form:"name"`
 	Email               string `form:"email"`
 	Password            string `form:"password"`
-	valdiator.Validator `form:"-"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
@@ -123,13 +122,13 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.CheckField(valdiator.NotBlank(form.Name), "name", "Name cannot be blank")
+	form.CheckField(validator.NotBlank(form.Name), "name", "Name cannot be blank")
 
-	form.CheckField(valdiator.NotBlank(form.Email), "email", "Email cannot be blank")
-	form.CheckField(valdiator.ValidEmail(form.Email), "email", "Please enter a valid email address")
+	form.CheckField(validator.NotBlank(form.Email), "email", "Email cannot be blank")
+	form.CheckField(validator.ValidEmail(form.Email), "email", "Please enter a valid email address")
 
-	form.CheckField(valdiator.NotBlank(form.Password), "password", "Password cannot be blank")
-	form.CheckField(valdiator.MinChars(form.Password, 8), "password", "Password must be at least 8 characters")
+	form.CheckField(validator.NotBlank(form.Password), "password", "Password cannot be blank")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "Password must be at least 8 characters")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -158,7 +157,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 type userLoginForm struct {
 	Email               string `form:"email"`
 	Password            string `form:"password"`
-	valdiator.Validator `form:"-"`
+	validator.Validator `form:"-"`
 }
 
 // Display a HTML form for logging in a user
@@ -177,11 +176,11 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.CheckField(valdiator.NotBlank(form.Email), "email", "Email cannot be blank")
-	form.CheckField(valdiator.ValidEmail(form.Email), "email", "Please enter a valid email address")
+	form.CheckField(validator.NotBlank(form.Email), "email", "Email cannot be blank")
+	form.CheckField(validator.ValidEmail(form.Email), "email", "Please enter a valid email address")
 
-	form.CheckField(valdiator.NotBlank(form.Password), "password", "Password cannot be blank")
-	form.CheckField(valdiator.MinChars(form.Password, 8), "password", "Password must be at least 8 characters")
+	form.CheckField(validator.NotBlank(form.Password), "password", "Password cannot be blank")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "Password must be at least 8 characters")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
