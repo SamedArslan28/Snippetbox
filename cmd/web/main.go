@@ -63,7 +63,7 @@ func main() {
 	// Setting this means that the cookie will only be sent by a user's web
 	// browser when an HTTPS connection is being used (and won't be sent over an
 	// unsecure HTTP connection).
-	sessionManager.Cookie.Secure = false
+	sessionManager.Cookie.Secure = true
 
 	app := &application{
 		errorLog:       errorLog,
