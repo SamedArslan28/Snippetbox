@@ -13,7 +13,9 @@
             {{with .Form.FieldErrors.email}}
                 <label class="error">{{.}}</label>
             {{end}}
-            <input type="email" name="email" value="{{.Form.Email}}">
+            <label>
+                <input type="email" name="email" value="{{.Form.Email}}">
+            </label>
         </div>
 
         <div>
@@ -21,7 +23,9 @@
             {{with .Form.FieldErrors.password}}
                 <label class="error">{{.}}</label>
             {{end}}
-            <input type="password" name="password">
+            <label>
+                <input type="password" name="password">
+            </label>
         </div>
 
         <div>

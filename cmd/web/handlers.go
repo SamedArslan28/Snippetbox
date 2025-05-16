@@ -160,7 +160,7 @@ type userLoginForm struct {
 	validator.Validator `form:"-"`
 }
 
-// Display a HTML form for logging in a user
+// Display an HTML form for logging in a user
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Form = userLoginForm{}

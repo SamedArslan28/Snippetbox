@@ -43,7 +43,7 @@ VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
 	return nil
 }
 
-// We'll use the Authenticate method to verify whether a user exists with
+// Authenticate We'll use the Authenticate method to verify whether a user exists with
 // the provided email address and password. This will return the relevant
 // user ID if they do.
 func (m *UserModel) Authenticate(email, password string) (int, error) {
@@ -74,7 +74,7 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	return id, nil
 }
 
-// We'll use the Exists method to check if a user exists with a specific ID.
+// Exists checks if a user exists with a specific ID.
 func (m *UserModel) Exists(id int) (bool, error) {
 	var exists bool
 

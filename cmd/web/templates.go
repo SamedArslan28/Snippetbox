@@ -20,7 +20,10 @@ type templateData struct {
 }
 
 func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:04")
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 var functions = template.FuncMap{
@@ -30,7 +33,7 @@ var functions = template.FuncMap{
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
-	// Use fs.Glob() to get a slice of all filepaths in the ui.Files embedded
+	// Use fs.Glob() to get a slice of all file paths in the ui.Files embedded
 	// filesystem which match the pattern 'html/pages/*.tmpl'.
 	pages, err := fs.Glob(ui.Files, "html/pages/*.gohtml")
 	if err != nil {

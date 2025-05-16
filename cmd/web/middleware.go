@@ -49,8 +49,8 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 			return
 		}
-		// Otherwise set the "Cache-Control: no-store" header so that pages
-		// require authentication are not stored in the users browser cache (or
+		// Otherwise, set the "Cache-Control: no-store" header so that pages
+		// require authentication are not stored in the user's browser cache (or
 		// other intermediary cache).
 		w.Header().Add("Cache-Control", "no-store")
 		// And call the next handler in the chain.
