@@ -21,17 +21,19 @@ import (
 // For now, we'll only include fields for the two custom loggers, but
 // we'll add more to it as the build progresses.
 type application struct {
-	errorLog       *log.Logger
-	infoLog        *log.Logger
-	snippets       models.SnippetModelInterface
-	users          models.UserModelInterface
-	templateCache  map[string]*template.Template
-	formDecoder    *form.Decoder
-	sessionManager *scs.SessionManager
+	errorLog          *log.Logger
+	infoLog           *log.Logger
+	snippets          models.SnippetModelInterface
+	users             models.UserModelInterface
+	templateCache     map[string]*template.Template
+	formDecoder       *form.Decoder
+	sessionManager    *scs.SessionManager
+	isDebugModeActive bool
 }
 
 func main() {
 	addr := flag.String("addr", ":4000", "http service address")
+	debug := flag.Bool("debug", false, "enable debug mode")
 	dsn := flag.String("dsn", "postgres://postgres:postgres@localhost:5432/snippetbox?sslmode=disable", "database connection string")
 
 	flag.Parse()
@@ -60,19 +62,17 @@ func main() {
 	sessionManager := scs.New()
 	sessionManager.Store = postgresstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
-	// Setting this means that the cookie will only be sent by a user's web
-	// browser when an HTTPS connection is being used (and won't be sent over an
-	// unsecure HTTP connection).
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
-		errorLog:       errorLog,
-		infoLog:        infoLog,
-		users:          &models.UserModel{DB: db},
-		snippets:       &models.SnippetModel{DB: db},
-		templateCache:  templateCache,
-		formDecoder:    formDecoder,
-		sessionManager: sessionManager,
+		errorLog:          errorLog,
+		infoLog:           infoLog,
+		users:             &models.UserModel{DB: db},
+		snippets:          &models.SnippetModel{DB: db},
+		templateCache:     templateCache,
+		formDecoder:       formDecoder,
+		sessionManager:    sessionManager,
+		isDebugModeActive: *debug,
 	}
 
 	infoLog.Printf("Starting server on %s", *addr)
