@@ -1,9 +1,8 @@
 package models
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestUserModelExists(t *testing.T) {
@@ -31,7 +30,6 @@ func TestUserModelExists(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Set up fresh DB and model for each sub-test
 			db := newTestDB(t)
 			m := UserModel{DB: db}
 
