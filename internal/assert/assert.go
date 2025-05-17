@@ -1,6 +1,9 @@
 package assert
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 //Note: The t.Helper() function that we’re using in the code above indicates to the Go
 //test runner that our Equal() function is a test helper. This means that when t.Errorf()
@@ -12,5 +15,12 @@ func Equal[T comparable](t *testing.T, actual, expected T) {
 
 	if actual != expected {
 		t.Errorf("expected %v, got %v", expected, actual)
+	}
+}
+
+func Contains(t *testing.T, actual, expectedSubstring string) {
+	t.Helper()
+	if !strings.Contains(actual, expectedSubstring) {
+		t.Errorf("got: %q; expected to contain: %q", actual, expectedSubstring)
 	}
 }
