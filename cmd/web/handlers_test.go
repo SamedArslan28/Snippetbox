@@ -1,37 +1,22 @@
 package main
 
 import (
-	"bytes"
-	"io"
 	"net/http"
-	"net/http/httptest"
 	"snippetbox.samedarslan28.net/internal/assert"
 	"testing"
 )
 
 func TestPing(t *testing.T) {
-	responseRecorder := httptest.NewRecorder()
+	// Create a new instance of our application struct. For now, this just
+	// contains a couple of mock loggers (which discard anything written to
+	// them).
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
 
-	request, err := http.NewRequest(http.MethodGet, "/ping", nil)
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	statusCode, _, body := ts.get(t, "/ping")
 
-	ping(responseRecorder, request)
-	responseResult := responseRecorder.Result()
+	assert.Equal(t, statusCode, http.StatusOK)
 
-	assert.Equal(t, responseResult.StatusCode, http.StatusOK)
-
-	defer responseResult.Body.Close()
-
-	body, err := io.ReadAll(responseResult.Body)
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-	bytes.TrimSpace(body)
-
-	assert.Equal(t, string(body), "Ok")
-
+	assert.Equal(t, body, "OK")
 }
