@@ -213,6 +213,12 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
+	app.sessionManager.Put(r.Context(), "flash", "You have been logged in.")
+	requestedURL := app.sessionManager.GetString(r.Context(), "requestedURL")
+	if requestedURL != "" {
+		http.Redirect(w, r, requestedURL, http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
