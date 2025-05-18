@@ -1,0 +1,15 @@
+{{define "title"}}Account{{end}}
+
+{{define "main"}}
+    <div class='user-account'>
+
+        <div class='metadata'>
+            <strong>{{.Form.User.Name}}</strong><br>
+            <span>{{.Form.User.Email}}</span>
+        </div>
+
+        <div class='metadata'>
+            <time>Created: {{humanDate .Form.User.CreatedAt}}</time>
+        </div>
+    </div>
+{{end}}

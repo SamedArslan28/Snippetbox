@@ -199,8 +199,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 			form.AddNonFieldError("Email or password is incorrect")
 			data := app.newTemplateData(r)
 			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity,
-				"login.gohtml", data)
+			app.render(w, http.StatusUnprocessableEntity, "login.gohtml", data)
 		} else {
 			app.serverError(w, err)
 		}
@@ -232,4 +231,24 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 func (app *application) about(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	app.render(w, http.StatusOK, "about.gohtml", data)
+}
+
+type UserTemplateData struct {
+	User *models.User
+}
+
+func (app *application) account(w http.ResponseWriter, r *http.Request) {
+	var form UserTemplateData
+	data := app.newTemplateData(r)
+	authenticatedID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	app.infoLog.Println("authenticatedID: ", authenticatedID)
+	authenticatedUser, err := app.users.Get(authenticatedID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	form.User = authenticatedUser
+	data.Form = form
+
+	app.render(w, http.StatusOK, "account.gohtml", data)
 }
