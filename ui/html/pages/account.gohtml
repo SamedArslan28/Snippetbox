@@ -1,15 +1,25 @@
 {{define "title"}}Account{{end}}
 
 {{define "main"}}
-    <div class='user-account'>
-
-        <div class='metadata'>
-            <strong>{{.Form.User.Name}}</strong><br>
-            <span>{{.Form.User.Email}}</span>
-        </div>
-
-        <div class='metadata'>
-            <time>Created: {{humanDate .Form.User.CreatedAt}}</time>
-        </div>
-    </div>
+    <h2>Your Account</h2>
+    {{with .Form}}
+        <table>
+            <tr>
+                <th>Name</th>
+                <td>{{.User.Name}}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{.User.Email}}</td>
+            </tr>
+            <tr>
+                <th>Joined</th>
+                <td>{{humanDate .User.CreatedAt}}</td>
+            </tr>
+            <tr>
+                <th>Change Password</th>
+                <td><a href="/user/account/password/update">Change</a></td>
+            </tr>
+        </table>
+    {{end}}
 {{end}}

@@ -257,3 +257,61 @@ func (app *application) account(w http.ResponseWriter, r *http.Request) {
 
 	app.render(w, http.StatusOK, "account.gohtml", data)
 }
+
+type userUpdateForm struct {
+	Password            string `form:"current_password"`
+	NewPassword         string `form:"new_password"`
+	NewPasswordConfirm  string `form:"new_password_confirm"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) changePassword(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Form = userUpdateForm{}
+	app.render(w, http.StatusOK, "change_password.gohtml", data)
+}
+
+func (app *application) changePasswordPost(w http.ResponseWriter, r *http.Request) {
+	var form userUpdateForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Password), "current_password", "Current password cannot be blank")
+	form.CheckField(validator.MinChars(form.Password, 8), "current_password", "Current password must be at least 8 characters")
+
+	form.CheckField(validator.NotBlank(form.NewPassword), "new_password", "New password cannot be blank")
+	form.CheckField(validator.MinChars(form.Password, 8), "new_password", "New password must be at least 8 characters")
+
+	form.CheckField(validator.NotBlank(form.NewPasswordConfirm), "new_password_confirm", "New password confirm cannot be blank")
+	form.CheckField(validator.MinChars(form.NewPasswordConfirm, 8), "new_password_confirm", "New password confirm must be at least 8 characters")
+
+	if form.NewPassword != form.NewPasswordConfirm {
+		form.AddNonFieldError("Passwords doesnt match.")
+	}
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "change_password.gohtml", data)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	err = app.users.PasswordUpdate(userID, form.Password, form.NewPassword)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddFieldError("current_password", "Current password is incorrect")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusUnprocessableEntity, "change_password.gohtml", data)
+		} else if err != nil {
+			app.serverError(w, err)
+		}
+		return
+	}
+	app.sessionManager.Put(r.Context(), "flash", "Password updated successfully.")
+	http.Redirect(w, r, "/user/account", http.StatusSeeOther)
+}
