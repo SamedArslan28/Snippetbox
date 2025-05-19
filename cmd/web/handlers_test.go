@@ -203,9 +203,93 @@ func TestUserSignupPost(t *testing.T) {
 	}
 }
 
-// TODO: Test user login.
 func TestUserLogin(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
 
+	// Get valid CSRF token once
+	_, _, body := ts.get(t, "/user/login")
+	validCSRFToken := extractCSRFToken(t, body)
+
+	type testCase struct {
+		name         string
+		email        string
+		password     string
+		csrfToken    string
+		expectedCode int
+	}
+
+	tests := []testCase{
+		{
+			name:         "Valid credentials",
+			email:        "alice@example.com",
+			password:     "pa$$word",
+			csrfToken:    validCSRFToken,
+			expectedCode: http.StatusSeeOther,
+		},
+		{
+			name:         "Blank email",
+			email:        "",
+			password:     "pa$$word",
+			csrfToken:    validCSRFToken,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Invalid email format",
+			email:        "bademail",
+			password:     "pa$$word",
+			csrfToken:    validCSRFToken,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Blank password",
+			email:        "alice@example.com",
+			password:     "",
+			csrfToken:    validCSRFToken,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Short password",
+			email:        "alice@example.com",
+			password:     "short",
+			csrfToken:    validCSRFToken,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Invalid credentials",
+			email:        "alice@example.com",
+			password:     "wrongpass",
+			csrfToken:    validCSRFToken,
+			expectedCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:         "Invalid CSRF token",
+			email:        "alice@example.com",
+			password:     "pa$$word",
+			csrfToken:    "invalid-token",
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Invalid User",
+			email:        "test@gmail.com",
+			password:     "test_password",
+			csrfToken:    validCSRFToken,
+			expectedCode: http.StatusUnprocessableEntity,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			form := url.Values{}
+			form.Add("email", tt.email)
+			form.Add("password", tt.password)
+			form.Add("csrf_token", tt.csrfToken)
+
+			statusCode, _, _ := ts.postForm(t, "/user/login", form)
+			assert.Equal(t, tt.expectedCode, statusCode)
+		})
+	}
 }
 
 func TestSnippetCreate(t *testing.T) {
