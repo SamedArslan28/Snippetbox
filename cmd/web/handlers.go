@@ -246,7 +246,6 @@ func (app *application) account(w http.ResponseWriter, r *http.Request) {
 	var form UserTemplateData
 	data := app.newTemplateData(r)
 	authenticatedID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	app.infoLog.Println("authenticatedID: ", authenticatedID)
 	authenticatedUser, err := app.users.Get(authenticatedID)
 	if err != nil {
 		app.serverError(w, err)
@@ -254,7 +253,6 @@ func (app *application) account(w http.ResponseWriter, r *http.Request) {
 	}
 	form.User = authenticatedUser
 	data.Form = form
-
 	app.render(w, http.StatusOK, "account.gohtml", data)
 }
 

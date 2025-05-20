@@ -13,9 +13,7 @@ func TestPing(t *testing.T) {
 	defer ts.Close()
 
 	statusCode, _, body := ts.get(t, "/ping")
-
 	assert.Equal(t, statusCode, http.StatusOK)
-
 	assert.Equal(t, body, "OK")
 }
 
@@ -25,7 +23,6 @@ func TestHome(t *testing.T) {
 	defer ts.Close()
 
 	statusCode, _, _ := ts.get(t, "/")
-
 	assert.Equal(t, statusCode, http.StatusOK)
 }
 
@@ -218,7 +215,6 @@ func TestUserLogin(t *testing.T) {
 	ts := newTestServer(t, app.routes())
 	defer ts.Close()
 
-	// Get valid CSRF token once
 	_, _, body := ts.get(t, "/user/login")
 	validCSRFToken := extractCSRFToken(t, body)
 
@@ -315,18 +311,55 @@ func TestSnippetCreate(t *testing.T) {
 	})
 
 	t.Run("Authenticated", func(t *testing.T) {
-		_, _, body := ts.get(t, "/user/login")
-		csrfToken := extractCSRFToken(t, body)
-
-		form := url.Values{}
-		form.Add("email", "alice@example.com")
-		form.Add("password", "pa$$word")
-		form.Add("csrf_token", csrfToken)
-		ts.postForm(t, "/user/login", form)
+		authenticateTestUser(t, ts)
 
 		code, _, body := ts.get(t, "/snippet/create")
 		assert.Equal(t, code, http.StatusOK)
 		assert.Contains(t, body, "<form action='/snippet/create' method= 'POST'>")
 	})
+}
 
+func TestAccount(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	authenticateTestUser(t, ts)
+
+	statusCode, _, _ := ts.get(t, "/user/account")
+	assert.Equal(t, statusCode, http.StatusOK)
+}
+
+func TestLogoutPost(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	_, _, body := ts.get(t, "/user/login")
+	csrfToken := extractCSRFToken(t, body)
+
+	form := url.Values{}
+	form.Add("email", "alice@example.com")
+	form.Add("password", "pa$$word")
+	form.Add("csrf_token", csrfToken)
+	_, _, _ = ts.postForm(t, "/user/login", form)
+
+	logoutForm := url.Values{}
+
+	logoutForm.Add("csrf_token", csrfToken)
+
+	statusCode, _, _ := ts.postForm(t, "/user/logout", logoutForm)
+	assert.Equal(t, statusCode, http.StatusSeeOther)
+
+}
+
+func TestChangePassword(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	authenticateTestUser(t, ts)
+
+	statusCode, _, _ := ts.get(t, "/user/account/password/update")
+	assert.Equal(t, statusCode, http.StatusOK)
 }

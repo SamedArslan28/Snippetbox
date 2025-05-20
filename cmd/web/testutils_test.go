@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"snippetbox.samedarslan28.net/internal/assert"
 	"snippetbox.samedarslan28.net/internal/models/mocks"
 	"testing"
 	"time"
@@ -107,4 +108,17 @@ func (ts *testServer) postForm(t *testing.T, urlPath string, form url.Values) (i
 	}
 	bytes.TrimSpace(body)
 	return rs.StatusCode, rs.Header, string(body)
+}
+
+func authenticateTestUser(t *testing.T, ts *testServer) {
+	_, _, body := ts.get(t, "/user/login")
+	csrfToken := extractCSRFToken(t, body)
+
+	form := url.Values{}
+	form.Add("email", "alice@example.com")
+	form.Add("password", "pa$$word")
+	form.Add("csrf_token", csrfToken)
+
+	code, _, _ := ts.postForm(t, "/user/login", form)
+	assert.Equal(t, code, http.StatusSeeOther)
 }
