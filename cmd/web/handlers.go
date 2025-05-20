@@ -86,7 +86,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusBadRequest, "create.gohtml", data)
+		app.render(w, http.StatusUnprocessableEntity, "create.gohtml", data)
 		return
 	}
 

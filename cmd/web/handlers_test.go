@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"snippetbox.samedarslan28.net/internal/assert"
+	"strings"
 	"testing"
 )
 
@@ -433,6 +434,79 @@ func TestChangePasswordPost(t *testing.T) {
 
 			if code != tt.wantCode {
 				t.Errorf("%s: expected status code %d; got %d", tt.name, tt.wantCode, code)
+			}
+		})
+	}
+}
+func TestSnippetCreatePost(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	csrfToken := authenticateTestUser(t, ts) // Logs in the test user and returns CSRF token
+
+	tests := []struct {
+		name      string
+		title     string
+		content   string
+		expires   string
+		csrfToken string
+		wantCode  int
+	}{
+		{
+			name:      "Valid submission",
+			title:     "Test Snippet",
+			content:   "This is a test snippet content.",
+			expires:   "7",
+			csrfToken: csrfToken,
+			wantCode:  http.StatusSeeOther,
+		},
+		{
+			name:      "Empty title and content",
+			title:     "",
+			content:   "",
+			expires:   "7",
+			csrfToken: csrfToken,
+			wantCode:  http.StatusUnprocessableEntity,
+		},
+		{
+			name:      "Invalid expires value",
+			title:     "Test Snippet",
+			content:   "Some content here",
+			expires:   "999",
+			csrfToken: csrfToken,
+			wantCode:  http.StatusUnprocessableEntity,
+		},
+		{
+			name:      "Missing CSRF token",
+			title:     "Test Snippet",
+			content:   "Some content here",
+			expires:   "7",
+			csrfToken: "", // no CSRF
+			wantCode:  http.StatusBadRequest,
+		},
+		{
+			name:      "Title exceeds character limit",
+			title:     strings.Repeat("a", 101),
+			content:   "Some content here",
+			expires:   "1",
+			csrfToken: csrfToken,
+			wantCode:  http.StatusUnprocessableEntity,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			form := url.Values{}
+			form.Add("title", tt.title)
+			form.Add("content", tt.content)
+			form.Add("expires", tt.expires)
+			form.Add("csrf_token", tt.csrfToken)
+
+			code, _, _ := ts.postForm(t, "/snippet/create", form)
+
+			if code != tt.wantCode {
+				t.Errorf("%s: expected status code %d, got %d", tt.name, tt.wantCode, code)
 			}
 		})
 	}
