@@ -353,6 +353,15 @@ func TestLogoutPost(t *testing.T) {
 
 }
 
+func TestAbout(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	statusCode, _, _ := ts.get(t, "/about")
+	assert.Equal(t, statusCode, http.StatusOK)
+}
+
 func TestChangePassword(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.routes())
@@ -362,4 +371,69 @@ func TestChangePassword(t *testing.T) {
 
 	statusCode, _, _ := ts.get(t, "/user/account/password/update")
 	assert.Equal(t, statusCode, http.StatusOK)
+}
+
+func TestChangePasswordPost(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	csrfToken := authenticateTestUser(t, ts)
+	tests := []struct {
+		name            string
+		currentPassword string
+		newPassword     string
+		confirmPassword string
+		csrfToken       string
+		wantCode        int
+	}{
+		{
+			name:            "Empty form submission",
+			currentPassword: "",
+			newPassword:     "",
+			confirmPassword: "",
+			csrfToken:       csrfToken,
+			wantCode:        http.StatusUnprocessableEntity,
+		},
+		{
+			name:            "Passwords do not match",
+			currentPassword: "pa$$word",
+			newPassword:     "newPassword1",
+			confirmPassword: "newPassword2",
+			csrfToken:       csrfToken,
+			wantCode:        http.StatusUnprocessableEntity,
+		},
+		{
+			name:            "Invalid current password",
+			currentPassword: "wrongpassword",
+			newPassword:     "newPassword1",
+			confirmPassword: "newPassword1",
+			csrfToken:       csrfToken,
+			wantCode:        http.StatusUnprocessableEntity,
+		},
+		{
+			name:            "Valid password change",
+			currentPassword: "pa$$word",
+			newPassword:     "newPassword1",
+			confirmPassword: "newPassword1",
+			csrfToken:       csrfToken,
+			wantCode:        http.StatusSeeOther,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			form := url.Values{}
+			form.Add("current_password", tt.currentPassword)
+			form.Add("new_password", tt.newPassword)
+			form.Add("new_password_confirm", tt.confirmPassword)
+			form.Add("csrf_token", tt.csrfToken)
+
+			code, _, _ := ts.postForm(t, "/user/account/password/update", form)
+
+			if code != tt.wantCode {
+				t.Errorf("%s: expected status code %d; got %d", tt.name, tt.wantCode, code)
+			}
+		})
+	}
 }

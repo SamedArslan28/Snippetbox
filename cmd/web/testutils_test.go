@@ -110,7 +110,7 @@ func (ts *testServer) postForm(t *testing.T, urlPath string, form url.Values) (i
 	return rs.StatusCode, rs.Header, string(body)
 }
 
-func authenticateTestUser(t *testing.T, ts *testServer) {
+func authenticateTestUser(t *testing.T, ts *testServer) string {
 	_, _, body := ts.get(t, "/user/login")
 	csrfToken := extractCSRFToken(t, body)
 
@@ -121,4 +121,5 @@ func authenticateTestUser(t *testing.T, ts *testServer) {
 
 	code, _, _ := ts.postForm(t, "/user/login", form)
 	assert.Equal(t, code, http.StatusSeeOther)
+	return csrfToken
 }
