@@ -19,6 +19,16 @@ func TestPing(t *testing.T) {
 	assert.Equal(t, body, "OK")
 }
 
+func TestHome(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	statusCode, _, _ := ts.get(t, "/")
+
+	assert.Equal(t, statusCode, http.StatusOK)
+}
+
 func TestSnippetView(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.routes())
