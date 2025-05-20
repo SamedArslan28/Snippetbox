@@ -104,7 +104,6 @@ func openDB(dsn string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	// Test the connection
 	err = db.Ping()
 	if err != nil {
 		return nil, err
